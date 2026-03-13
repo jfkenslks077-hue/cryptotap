@@ -306,7 +306,8 @@ function doLogin(){
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainLayout').style.display='flex';
     localStorage.setItem('ct_admin_sess', Date.now());
-    appInit();
+    // Небольшая задержка чтобы Firebase SDK точно загрузился
+    setTimeout(appInit, 100);
   } else {
     const e=document.getElementById('loginErr');
     e.textContent='❌ Неверный пароль';
@@ -327,14 +328,16 @@ function changePwd(){
 }
 
 // Авто-вход если сессия < 2 часов
-const sess=localStorage.getItem('ct_admin_sess');
-if(sess && Date.now()-sess < 7200000){
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('mainLayout').style.display='flex';
-  appInit();
-} else {
-  document.getElementById('pwdInput').focus();
-}
+window.addEventListener('load', function() {
+  const sess=localStorage.getItem('ct_admin_sess');
+  if(sess && Date.now()-sess < 7200000){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainLayout').style.display='flex';
+    appInit();
+  } else {
+    document.getElementById('pwdInput').focus();
+  }
+});
 document.getElementById('pwdInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 
 // ════════════════════════════════════
@@ -367,8 +370,13 @@ function initFb(){
     return false;
   }
   try{
-    if(!firebase.apps.length) firebase.initializeApp(cfg);
-    db=firebase.database();
+    // Если уже инициализирован — используем существующий
+    if(firebase.apps.length){
+      db=firebase.database();
+    } else {
+      firebase.initializeApp(cfg);
+      db=firebase.database();
+    }
     if(st){ st.style.color='var(--green)'; st.textContent='✅ Подключено: '+cfg.databaseURL; }
     updateCodeSnippet(cfg);
     return true;
