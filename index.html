@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CryptoTap — Earn Coins</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1553,6 +1555,60 @@ function init() {
 }
 
 init();
+
+// ═══════════════════════════════════════════
+//  FIREBASE SYNC — отправка данных в базу
+// ═══════════════════════════════════════════
+const FB_CFG = {
+  apiKey:            "AIzaSyDb-HF8vubGvsmnhfiwj1h9ufj3UfxMwX8",
+  authDomain:        "cryptotap-198e7.firebaseapp.com",
+  databaseURL:       "https://cryptotap-198e7-default-rtdb.firebaseio.com",
+  projectId:         "cryptotap-198e7",
+  storageBucket:     "cryptotap-198e7.firebasestorage.app",
+  messagingSenderId: "804290551129",
+  appId:             "1:804290551129:web:d0a91f7a05c7f0523cc048"
+};
+
+let fbDb = null;
+try {
+  if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
+  fbDb = firebase.database();
+} catch(e) { console.warn('Firebase init error:', e); }
+
+function syncToFirebase() {
+  if (!fbDb || !gs) return;
+  const tg  = window.Telegram?.WebApp?.initDataUnsafe?.user || {};
+  const uid = tg.id ? String(tg.id) : ('anon_' + (gs.anonId = gs.anonId || Math.random().toString(36).slice(2)));
+  try {
+    fbDb.ref('players/' + uid).set({
+      tgId:          tg.id          || null,
+      firstName:     tg.first_name  || gs.playerName || 'Игрок',
+      username:      tg.username    || null,
+      isPremium:     tg.is_premium  || false,
+      balance:       Math.floor(gs.balance       || 0),
+      allTimeEarned: Math.floor(gs.allTimeEarned || 0),
+      totalTaps:     gs.totalTaps   || 0,
+      level:         gs.level       || 1,
+      streak:        gs.streak      || 0,
+      daysActive:    gs.daysActive  || 1,
+      lastSeen:      Date.now(),
+      firstSeen:     gs.firstSeen   || Date.now(),
+    });
+  } catch(e) {}
+}
+
+// Сохраняем firstSeen при первом входе
+if (!gs.firstSeen) { gs.firstSeen = Date.now(); saveState(); }
+
+// Синк каждые 30 секунд
+setInterval(syncToFirebase, 30000);
+
+// Синк при каждом сохранении
+const _origSave = saveState;
+saveState = function() { _origSave(); syncToFirebase(); };
+
+// Первый синк через 3 секунды после загрузки
+setTimeout(syncToFirebase, 3000);
 </script>
 </body>
 </html>
