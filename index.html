@@ -381,6 +381,8 @@
     position: absolute; inset: 0;
     background: linear-gradient(135deg, rgba(255,215,0,0.05) 0%, transparent 60%);
     opacity: 0; transition: opacity 0.25s;
+    pointer-events: none; /* ← НЕ перехватывать клики/тачи */
+    z-index: 0;
   }
 
   .boost-card:hover { border-color: rgba(255,215,0,0.3); }
@@ -393,6 +395,7 @@
   .boost-icon {
     width: 52px; height: 52px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1;
     font-size: 26px; flex-shrink: 0;
   }
   .boost-icon.color-gold { background: rgba(255,215,0,0.12); }
@@ -400,7 +403,7 @@
   .boost-icon.color-purple { background: rgba(139,92,246,0.12); }
   .boost-icon.color-green { background: rgba(0,229,170,0.1); }
 
-  .boost-info { flex: 1; }
+  .boost-info { flex: 1; position: relative; z-index: 1; }
   .boost-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
   .boost-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
   .boost-level {
@@ -410,6 +413,7 @@
 
   .boost-cost {
     text-align: right; flex-shrink: 0;
+    position: relative; z-index: 1;
   }
   .boost-price {
     font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700;
@@ -424,9 +428,13 @@
     color: #000; font-weight: 700; font-size: 12px; cursor: pointer;
     font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px;
     transition: opacity 0.2s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(255,215,0,0.3);
+    position: relative; z-index: 10;
+    min-width: 80px; min-height: 36px;
   }
-  .btn-buy:hover { opacity: 0.85; }
-  .btn-buy:disabled { background: rgba(255,255,255,0.1); color: var(--text2); cursor: not-allowed; }
+  .btn-buy:active { opacity: 0.7; transform: scale(0.96); }
+  .btn-buy:disabled { background: rgba(255,255,255,0.1); color: var(--text2); cursor: not-allowed; opacity: 0.5; }
   .btn-buy.owned-btn { background: linear-gradient(135deg, var(--green), #00BFFF); }
 
   /* Leaderboard */
@@ -613,7 +621,13 @@
     100% { opacity: 0; transform: translate(-50%,-80%) scale(0.8); }
   }
 
-  .scroll-area { overflow-y: auto; max-height: calc(100vh - 80px); padding-bottom: 8px; }
+  .scroll-area {
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
   .scroll-area::-webkit-scrollbar { width: 3px; }
   .scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
@@ -1198,24 +1212,39 @@ function renderBoosts() {
   });
 }
 
-/* Единый делегированный обработчик на контейнер — надёжнее в Telegram WebView */
+/* Единый делегированный обработчик — на уровне экрана, не grid */
 function initBoostDelegation() {
-  const grid = document.getElementById('boostGrid');
+  const screen = document.getElementById('screen-boosts');
 
-  // touch
-  grid.addEventListener('touchend', function(e) {
+  // click охватывает и тач и мышь — самый надёжный вариант
+  screen.addEventListener('click', function(e) {
     const btn = e.target.closest('[data-action="buy"]');
-    if (!btn || btn.disabled) return;
-    e.preventDefault();
-    buyBoost(btn.dataset.boostId);
-  }, { passive: false });
+    if (!btn) return;
+    if (btn.disabled || btn.dataset.processing) return;
 
-  // mouse / desktop
-  grid.addEventListener('click', function(e) {
-    const btn = e.target.closest('[data-action="buy"]');
-    if (!btn || btn.disabled) return;
+    // защита от двойного нажатия
+    btn.dataset.processing = '1';
+    setTimeout(() => delete btn.dataset.processing, 600);
+
     buyBoost(btn.dataset.boostId);
   });
+
+  // touchstart только для визуального feedback (не preventDefault!)
+  screen.addEventListener('touchstart', function(e) {
+    const btn = e.target.closest('[data-action="buy"]');
+    if (btn && !btn.disabled) {
+      btn.style.transform = 'scale(0.95)';
+      btn.style.opacity   = '0.8';
+    }
+  }, { passive: true });
+
+  screen.addEventListener('touchend', function(e) {
+    const btn = e.target.closest('[data-action="buy"]');
+    if (btn) {
+      btn.style.transform = '';
+      btn.style.opacity   = btn.disabled ? '0.5' : '1';
+    }
+  }, { passive: true });
 }
 
 /* Обновление кнопок без перерисовки */
