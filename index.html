@@ -767,7 +767,7 @@
       <div class="referral-block">
         <div class="referral-title">👥 Приглашай друзей</div>
         <div class="referral-desc">За каждого приглашённого друга ты получаешь 500 монет! А друг — 250 монет старта.</div>
-        <div class="referral-link" id="refLink">t.me/CryptoTapBot?start=ref_</div>
+        <div class="referral-link" id="refLink">t.me/CryptoGameTest_Bot?start=ref_</div>
         <button class="btn-copy" onclick="copyRef()">📋 Скопировать ссылку</button>
       </div>
     </div>
@@ -1426,7 +1426,7 @@ function renderAchievements() {
 // ===================== REFERRAL =====================
 function copyRef() {
   const userId = tgUser ? tgUser.id : gs.userId;
-  const link = 't.me/CryptoTapBot?start=ref_' + userId;
+  const link = 't.me/CryptoGameTest_Bot?start=ref_' + userId;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(link).then(() => showNotif('✅ Ссылка скопирована!'));
   } else {
@@ -1468,7 +1468,7 @@ function init() {
   document.getElementById('profileId').textContent = 'ID: #' + (tgUser ? tgUser.id : gs.userId);
 
   const userId = tgUser ? tgUser.id : gs.userId;
-  document.getElementById('refLink').textContent = 't.me/CryptoTapBot?start=ref_' + userId;
+  document.getElementById('refLink').textContent = 't.me/CryptoGameTest_Bot?start=ref_' + userId;
 
   // Daily login check
   const today = new Date().toDateString();

@@ -4,1800 +4,643 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CryptoTap — Admin Panel</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 <style>
 :root {
-  --bg:      #070711;
-  --bg2:     #0C0C1A;
-  --bg3:     #111126;
-  --sidebar: #0A0A18;
-  --card:    rgba(255,255,255,0.035);
-  --border:  rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --text:    #E4E4FF;
-  --text2:   rgba(228,228,255,0.5);
-  --cyan:    #00EFFF;
-  --gold:    #FFD700;
-  --green:   #00E5AA;
-  --red:     #FF4757;
-  --purple:  #8B5CF6;
-  --orange:  #FF6B00;
-  --blue:    #3B82F6;
+  --dark:#0A0A14; --dark2:#0F0F1E; --card:#13132B;
+  --border:rgba(255,255,255,0.08); --gold:#FFD700; --cyan:#00FFFF;
+  --green:#00E5AA; --red:#FF4757; --purple:#8B5CF6;
+  --text:#E8E8FF; --text2:rgba(232,232,255,0.55);
 }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh;}
 
-* { margin:0; padding:0; box-sizing:border-box; }
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--dark);display:flex;align-items:center;justify-content:center;z-index:999;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;width:340px;text-align:center;}
+.login-logo{font-size:48px;margin-bottom:12px;}
+.login-title{font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
+.login-input{width:100%;padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-size:15px;margin-bottom:12px;outline:none;text-align:center;letter-spacing:3px;}
+.login-input:focus{border-color:var(--gold);}
+.login-btn{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#FFA500);color:#000;font-weight:700;font-size:15px;cursor:pointer;}
+.login-error{color:var(--red);font-size:13px;margin-top:10px;min-height:20px;}
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Rajdhani', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-/* Grid layout */
-.layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  min-height: 100vh;
-}
-
-/* SIDEBAR */
-.sidebar {
-  background: var(--sidebar);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  position: fixed; left:0; top:0; bottom:0;
-  width: 240px; z-index: 100;
-  overflow-y: auto;
-}
-
-.sidebar-brand {
-  padding: 24px 20px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.brand-logo {
-  font-family: 'Orbitron', monospace;
-  font-size: 16px; font-weight: 900;
-  background: linear-gradient(135deg, var(--gold), var(--orange));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px; margin-bottom: 2px;
-}
-
-.brand-sub {
-  font-size: 10px; color: var(--text2);
-  letter-spacing: 2px; text-transform: uppercase;
-  font-family: 'Orbitron', monospace;
-}
-
-.nav-section {
-  padding: 16px 12px 8px;
-}
-
-.nav-section-title {
-  font-size: 10px; color: var(--text2);
-  letter-spacing: 2px; text-transform: uppercase;
-  font-family: 'Orbitron', monospace;
-  padding: 0 8px; margin-bottom: 6px;
-}
-
-.nav-link {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 10px;
-  cursor: pointer; transition: all 0.2s;
-  color: var(--text2); font-size: 14px; font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.nav-link:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-
-.nav-link.active {
-  background: rgba(0,239,255,0.08);
-  color: var(--cyan);
-  border-left: 2px solid var(--cyan);
-}
-
-.nav-icon { font-size: 16px; width: 20px; text-align: center; }
-
-.nav-badge {
-  margin-left: auto; background: rgba(255,71,87,0.2);
-  color: var(--red); font-size: 10px; font-weight: 700;
-  padding: 2px 7px; border-radius: 8px;
-  font-family: 'Orbitron', monospace;
-}
-
-.sidebar-footer {
-  margin-top: auto; padding: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.admin-user {
-  display: flex; align-items: center; gap: 10px;
-}
-
-.admin-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--purple), var(--cyan));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; font-family: 'Orbitron', monospace;
-}
-
-.admin-name { font-size: 13px; font-weight: 700; color: var(--text); }
-.admin-role { font-size: 11px; color: var(--cyan); }
+/* LAYOUT */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);font-size:18px;font-weight:700;color:var(--gold);}
+.sidebar-logo span{font-size:11px;color:var(--text2);display:block;font-weight:400;margin-top:2px;}
+.nav-item{padding:12px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text2);transition:all 0.2s;border-left:3px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,0.04);color:var(--text);}
+.nav-item.active{background:rgba(255,215,0,0.08);color:var(--gold);border-left-color:var(--gold);}
+.nav-section{padding:16px 20px 6px;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);}
+.logout-btn{margin-top:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red);cursor:pointer;font-size:12px;width:100%;}
 
 /* MAIN */
-.main {
-  margin-left: 240px;
-  padding: 0;
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-}
-
-/* Topbar */
-.topbar {
-  background: rgba(7,7,17,0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 28px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top:0; z-index: 50;
-}
-
-.topbar-left h1 {
-  font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-.topbar-left p { font-size: 13px; color: var(--text2); margin-top: 2px; }
-
-.topbar-actions { display: flex; align-items: center; gap: 12px; }
-
-.btn {
-  padding: 8px 18px; border-radius: 10px; border: none;
-  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--cyan), var(--purple));
-  color: #000;
-}
-.btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
-
-.btn-secondary {
-  background: var(--card); border: 1px solid var(--border2);
-  color: var(--text);
-}
-.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
-
-.btn-danger {
-  background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3);
-  color: var(--red);
-}
-.btn-danger:hover { background: rgba(255,71,87,0.25); }
-
-.btn-success {
-  background: rgba(0,229,170,0.15); border: 1px solid rgba(0,229,170,0.3);
-  color: var(--green);
-}
-.btn-success:hover { background: rgba(0,229,170,0.25); }
-
-.btn-sm { padding: 5px 12px; font-size: 12px; }
-
-.status-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
-/* Content area */
-.content { padding: 24px 28px; flex:1; }
-
-/* SCREENS */
-.page { display: none; }
-.page.active { display: block; }
-
-/* KPI Grid */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px; margin-bottom: 24px;
-}
-
-.kpi-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px; padding: 20px;
-  position: relative; overflow: hidden;
-  transition: border-color 0.2s, transform 0.2s;
-}
-.kpi-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-
-.kpi-card::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, var(--accent, rgba(0,239,255,0.04)) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.kpi-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
-
-.kpi-icon {
-  width: 42px; height: 42px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center; font-size: 20px;
-}
-
-.kpi-change {
-  font-size: 12px; font-weight: 700;
-  padding: 3px 8px; border-radius: 6px;
-  display: flex; align-items: center; gap: 3px;
-}
-.kpi-change.up { background: rgba(0,229,170,0.12); color: var(--green); }
-.kpi-change.down { background: rgba(255,71,87,0.12); color: var(--red); }
-
-.kpi-value {
-  font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900;
-  color: var(--text); line-height: 1; margin-bottom: 4px;
-}
-
-.kpi-label { font-size: 12px; color: var(--text2); letter-spacing: 0.5px; }
-
-.kpi-sparkline { margin-top: 12px; height: 36px; }
-
-/* Charts row */
-.charts-row {
-  display: grid; grid-template-columns: 2fr 1fr;
-  gap: 16px; margin-bottom: 24px;
-}
-
-.chart-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 16px; padding: 20px;
-}
-
-.chart-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.chart-title { font-size: 15px; font-weight: 700; color: var(--text); }
-.chart-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-.chart-tabs { display: flex; gap: 4px; }
-
-.chart-tab {
-  padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  cursor: pointer; color: var(--text2); transition: all 0.2s;
-  border: 1px solid transparent;
-}
-.chart-tab.active { background: rgba(0,239,255,0.1); color: var(--cyan); border-color: rgba(0,239,255,0.2); }
-
-/* Tables */
-.table-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 16px; overflow: hidden; margin-bottom: 20px;
-}
-
-.table-header {
-  padding: 16px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-}
-
-.table-title { font-size: 15px; font-weight: 700; }
-.table-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-.search-input {
-  background: rgba(255,255,255,0.05); border: 1px solid var(--border2);
-  border-radius: 10px; padding: 8px 14px;
-  color: var(--text); font-size: 13px; font-family: 'Rajdhani', sans-serif;
-  width: 220px; outline: none; transition: border-color 0.2s;
-}
-.search-input::placeholder { color: var(--text2); }
-.search-input:focus { border-color: var(--cyan); }
-
-.data-table { width: 100%; border-collapse: collapse; }
-
-.data-table th {
-  background: rgba(255,255,255,0.02);
-  padding: 10px 20px;
-  text-align: left; font-size: 11px; font-weight: 700;
-  color: var(--text2); text-transform: uppercase; letter-spacing: 1px;
-  font-family: 'Orbitron', monospace; border-bottom: 1px solid var(--border);
-}
-
-.data-table td {
-  padding: 13px 20px; font-size: 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  vertical-align: middle;
-}
-
-.data-table tr:hover td { background: rgba(255,255,255,0.02); }
-.data-table tr:last-child td { border-bottom: none; }
-
-.user-cell { display: flex; align-items: center; gap: 10px; }
-
-.user-mini-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
-}
-
-.user-mini-name { font-size: 14px; font-weight: 700; }
-.user-mini-id { font-size: 11px; color: var(--text2); font-family: 'Orbitron', monospace; }
-
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
-  letter-spacing: 0.3px;
-}
-.badge-green { background: rgba(0,229,170,0.12); color: var(--green); border: 1px solid rgba(0,229,170,0.2); }
-.badge-red { background: rgba(255,71,87,0.12); color: var(--red); border: 1px solid rgba(255,71,87,0.2); }
-.badge-gold { background: rgba(255,215,0,0.12); color: var(--gold); border: 1px solid rgba(255,215,0,0.2); }
-.badge-blue { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
-.badge-purple { background: rgba(139,92,246,0.12); color: var(--purple); border: 1px solid rgba(139,92,246,0.2); }
-
-.actions-cell { display: flex; gap: 6px; }
-
-/* Pagination */
-.pagination {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 20px; border-top: 1px solid var(--border);
-  font-size: 13px; color: var(--text2);
-}
-.page-btns { display: flex; gap: 4px; }
-.page-btn {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--card); color: var(--text2); font-size: 13px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; font-family: 'Rajdhani', sans-serif;
-}
-.page-btn:hover { border-color: var(--cyan); color: var(--cyan); }
-.page-btn.active { background: rgba(0,239,255,0.1); border-color: var(--cyan); color: var(--cyan); }
-
-/* Activity feed */
-.activity-feed { display: flex; flex-direction: column; }
-
-.activity-item {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-.activity-item:last-child { border-bottom: none; }
-
-.activity-dot {
-  width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
-}
-
-.activity-text { flex: 1; font-size: 13px; line-height: 1.4; }
-.activity-text strong { color: var(--text); font-weight: 700; }
-.activity-time { font-size: 11px; color: var(--text2); margin-top: 2px; }
-
-/* Settings page */
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-.settings-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 16px; padding: 20px;
-}
-
-.settings-title {
-  font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700;
-  margin-bottom: 16px; color: var(--text); letter-spacing: -0.3px;
-}
-
-.form-group { margin-bottom: 14px; }
-.form-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
-
-.form-input, .form-select {
-  width: 100%; background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border2); border-radius: 10px;
-  padding: 9px 14px; color: var(--text); font-size: 14px;
-  font-family: 'Rajdhani', sans-serif; outline: none;
-  transition: border-color 0.2s;
-}
-.form-input:focus, .form-select:focus { border-color: var(--cyan); }
-.form-select option { background: var(--bg2); }
-
-.toggle-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.toggle-label { font-size: 14px; color: var(--text); }
-.toggle-desc { font-size: 12px; color: var(--text2); margin-top: 1px; }
-
-.toggle {
-  position: relative; width: 44px; height: 24px; flex-shrink: 0;
-}
-.toggle input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-  position: absolute; inset: 0; cursor: pointer;
-  background: rgba(255,255,255,0.1); border-radius: 12px;
-  transition: all 0.3s; border: 1px solid var(--border2);
-}
-.toggle-slider::before {
-  content: ''; position: absolute;
-  height: 18px; width: 18px; left: 3px; bottom: 2px;
-  background: var(--text2); border-radius: 50%;
-  transition: all 0.3s;
-}
-.toggle input:checked + .toggle-slider { background: rgba(0,229,170,0.2); border-color: var(--green); }
-.toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: var(--green); }
-
-/* Broadcast */
-.broadcast-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 16px; padding: 24px; margin-bottom: 16px;
-}
-
-.form-textarea {
-  width: 100%; background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border2); border-radius: 10px;
-  padding: 12px 14px; color: var(--text); font-size: 14px;
-  font-family: 'Rajdhani', sans-serif; outline: none; resize: vertical;
-  min-height: 100px; transition: border-color 0.2s; line-height: 1.5;
-}
-.form-textarea:focus { border-color: var(--cyan); }
-
-.char-count { font-size: 11px; color: var(--text2); text-align: right; margin-top: 4px; }
-
-.preview-box {
-  background: rgba(0,239,255,0.04); border: 1px solid rgba(0,239,255,0.12);
-  border-radius: 12px; padding: 16px; margin-top: 12px;
-}
-.preview-title { font-size: 11px; color: var(--cyan); margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
-.preview-text { font-size: 14px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-
-/* Filter row */
-.filter-row {
-  display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
-  align-items: center;
-}
-
-.filter-chip {
-  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-  border: 1px solid var(--border2); color: var(--text2);
-  background: var(--card);
-}
-.filter-chip:hover { color: var(--text); border-color: var(--border2); }
-.filter-chip.active { background: rgba(0,239,255,0.1); color: var(--cyan); border-color: rgba(0,239,255,0.3); }
-
-/* Progress bars */
-.progress-bar-wrap {
-  height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden;
-}
-.progress-bar {
-  height: 100%; border-radius: 3px; transition: width 0.5s ease;
-}
-
-/* Top users mini-chart */
-.mini-rank-list { display: flex; flex-direction: column; gap: 10px; }
-.mini-rank-item { display: flex; align-items: center; gap: 12px; }
-.mini-rank-num {
-  font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
-  width: 20px; color: var(--text2); text-align: center; flex-shrink: 0;
-}
-.mini-rank-name { font-size: 13px; font-weight: 600; flex: 1; }
-.mini-rank-bar-wrap { width: 80px; }
-.mini-rank-val { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--gold); }
-
-/* Modal */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  z-index: 500; display: none; align-items: center; justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-
-.modal {
-  background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: 20px; padding: 28px; width: 460px; max-width: 90vw;
-  animation: modalIn 0.25s ease;
-}
-@keyframes modalIn { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
-
-.modal-title { font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-.modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
-.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-
-/* Toast */
-.toast-container {
-  position: fixed; bottom: 24px; right: 24px;
-  z-index: 999; display: flex; flex-direction: column; gap: 8px;
-}
-
-.toast {
-  background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: 12px; padding: 12px 18px;
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; font-weight: 600; min-width: 240px;
-  animation: toastIn 0.3s ease;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-}
-.toast.success { border-color: rgba(0,229,170,0.3); }
-.toast.error { border-color: rgba(255,71,87,0.3); }
-.toast.info { border-color: rgba(0,239,255,0.3); }
-
-@keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-
-/* Responsive */
-@media (max-width: 1100px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .charts-row { grid-template-columns: 1fr; }
-  .settings-grid { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 768px) {
-  .layout { grid-template-columns: 1fr; }
-  .sidebar { width: 200px; transform: translateX(-100%); transition: transform 0.3s; }
-  .sidebar.open { transform: translateX(0); }
-  .main { margin-left: 0; }
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Skeleton loader */
-.skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite; border-radius: 6px;
-}
-@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
-
-.online-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); }
+.main{margin-left:220px;padding:28px;flex:1;}
+.page{display:none;}
+.page.active{display:block;}
+.page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-card.gold::before{background:linear-gradient(90deg,var(--gold),#FFA500);}
+.kpi-card.cyan::before{background:linear-gradient(90deg,var(--cyan),#007ACC);}
+.kpi-card.green::before{background:linear-gradient(90deg,var(--green),#00BFFF);}
+.kpi-card.purple::before{background:linear-gradient(90deg,var(--purple),#EC4899);}
+.kpi-label{font-size:12px;color:var(--text2);margin-bottom:8px;}
+.kpi-value{font-size:28px;font-weight:700;font-family:monospace;}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:4px;}
+.kpi-icon{position:absolute;top:16px;right:16px;font-size:24px;opacity:0.4;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 12px;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-gold{background:rgba(255,215,0,0.15);color:var(--gold);}
+.badge-green{background:rgba(0,229,170,0.15);color:var(--green);}
+.badge-red{background:rgba(255,71,87,0.15);color:var(--red);}
+.badge-purple{background:rgba(139,92,246,0.15);color:var(--purple);}
+
+/* CONTROLS */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.ctrl-input{flex:1;min-width:200px;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-size:13px;outline:none;}
+.ctrl-input:focus{border-color:var(--gold);}
+.filter-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text2);cursor:pointer;font-size:12px;}
+.filter-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.08);}
+textarea.ctrl-input{min-height:100px;resize:vertical;font-family:inherit;}
+.action-btn{padding:10px 24px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#FFA500);color:#000;font-weight:700;cursor:pointer;font-size:14px;margin-top:10px;}
+
+/* MISC */
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.stat-row:last-child{border-bottom:none;}
+.stat-val{font-weight:700;color:var(--gold);}
+.loading{text-align:center;padding:30px;color:var(--text2);}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.setup-code{background:rgba(0,0,0,0.5);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:var(--cyan);margin:8px 0;white-space:pre;overflow-x:auto;}
+.no-firebase{background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:16px;font-size:13px;color:var(--text2);text-align:center;}
 </style>
 </head>
 <body>
 
-<div class="layout">
-
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-logo">🪙 CRYPTOTAP</div>
-    <div class="brand-sub">Admin Panel v2.0</div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-section-title">Обзор</div>
-    <div class="nav-link active" onclick="goPage('dashboard',this)">
-      <span class="nav-icon">📊</span> Дашборд
-    </div>
-    <div class="nav-link" onclick="goPage('analytics',this)">
-      <span class="nav-icon">📈</span> Аналитика
-    </div>
-    <div class="nav-link" onclick="goPage('realtime',this)">
-      <span class="nav-icon">⚡</span> Онлайн
-      <span class="nav-badge" id="onlineBadge">...</span>
-    </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-section-title">Управление</div>
-    <div class="nav-link" onclick="goPage('users',this)">
-      <span class="nav-icon">👥</span> Пользователи
-    </div>
-    <div class="nav-link" onclick="goPage('leaderboard',this)">
-      <span class="nav-icon">🏆</span> Лидерборд
-    </div>
-    <div class="nav-link" onclick="goPage('rewards',this)">
-      <span class="nav-icon">🎁</span> Награды
-    </div>
-    <div class="nav-link" onclick="goPage('broadcast',this)">
-      <span class="nav-icon">📢</span> Рассылка
-    </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-section-title">Конфигурация</div>
-    <div class="nav-link" onclick="goPage('game-settings',this)">
-      <span class="nav-icon">⚙️</span> Игра
-    </div>
-    <div class="nav-link" onclick="goPage('boosts-admin',this)">
-      <span class="nav-icon">🚀</span> Бусты
-    </div>
-    <div class="nav-link" onclick="goPage('moderation',this)">
-      <span class="nav-icon">🛡️</span> Модерация
-      <span class="nav-badge">3</span>
-    </div>
-  </div>
-
-  <div class="sidebar-footer">
-    <div class="admin-user">
-      <div class="admin-avatar">A</div>
-      <div>
-        <div class="admin-name">Admin</div>
-        <div class="admin-role">Суперадмин</div>
-      </div>
-    </div>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <h1 id="pageTitle">Дашборд</h1>
-      <p id="pageDesc">Общий обзор платформы CryptoTap</p>
-    </div>
-    <div class="topbar-actions">
-      <div class="online-indicator">
-        <div class="status-dot"></div>
-        <span id="onlineCount">247 онлайн</span>
-      </div>
-      <button class="btn btn-secondary" onclick="exportData()">📤 Экспорт</button>
-      <button class="btn btn-primary" onclick="showModal('addUserModal')">+ Добавить</button>
-    </div>
-  </div>
-
-  <div class="content">
-
-    <!-- ==================== DASHBOARD ==================== -->
-    <div class="page active" id="page-dashboard">
-
-      <div class="kpi-grid">
-        <div class="kpi-card" style="--accent:rgba(0,239,255,0.06)">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(0,239,255,0.1);color:var(--cyan)">👥</div>
-            <div class="kpi-change up">↑ 12.4%</div>
-          </div>
-          <div class="kpi-value" id="kpiUsers">48,291</div>
-          <div class="kpi-label">Всего пользователей</div>
-          <canvas class="kpi-sparkline" id="spark1"></canvas>
-        </div>
-
-        <div class="kpi-card" style="--accent:rgba(255,215,0,0.06)">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(255,215,0,0.1);color:var(--gold)">🪙</div>
-            <div class="kpi-change up">↑ 8.7%</div>
-          </div>
-          <div class="kpi-value">2.4B</div>
-          <div class="kpi-label">Монет заработано</div>
-          <canvas class="kpi-sparkline" id="spark2"></canvas>
-        </div>
-
-        <div class="kpi-card" style="--accent:rgba(0,229,170,0.06)">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(0,229,170,0.1);color:var(--green)">👆</div>
-            <div class="kpi-change up">↑ 23.1%</div>
-          </div>
-          <div class="kpi-value">18.7M</div>
-          <div class="kpi-label">Тапов сегодня</div>
-          <canvas class="kpi-sparkline" id="spark3"></canvas>
-        </div>
-
-        <div class="kpi-card" style="--accent:rgba(139,92,246,0.06)">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(139,92,246,0.1);color:var(--purple)">📅</div>
-            <div class="kpi-change down">↓ 2.3%</div>
-          </div>
-          <div class="kpi-value">71.4%</div>
-          <div class="kpi-label">Retention D7</div>
-          <canvas class="kpi-sparkline" id="spark4"></canvas>
-        </div>
-      </div>
-
-      <div class="charts-row">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Активность пользователей</div>
-              <div class="chart-sub">Тапы и новые юзеры по дням</div>
-            </div>
-            <div class="chart-tabs">
-              <div class="chart-tab active" onclick="setChartTab(this,'7d')">7Д</div>
-              <div class="chart-tab" onclick="setChartTab(this,'30d')">30Д</div>
-              <div class="chart-tab" onclick="setChartTab(this,'90d')">3М</div>
-            </div>
-          </div>
-          <canvas id="mainChart" height="200"></canvas>
-        </div>
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Уровни игроков</div>
-              <div class="chart-sub">Распределение</div>
-            </div>
-          </div>
-          <canvas id="levelsChart" height="200"></canvas>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">🔝 Топ игроков</div>
-              <div class="chart-sub">По всем монетам</div>
-            </div>
-          </div>
-          <div class="mini-rank-list" id="topPlayersList"></div>
-        </div>
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">🕐 Активность</div>
-              <div class="chart-sub">Последние события</div>
-            </div>
-          </div>
-          <div class="activity-feed" id="activityFeed"></div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== ANALYTICS ==================== -->
-    <div class="page" id="page-analytics">
-      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(0,239,255,0.1);color:var(--cyan)">📱</div>
-            <div class="kpi-change up">↑ 5.2%</div>
-          </div>
-          <div class="kpi-value">3,842</div>
-          <div class="kpi-label">DAU (сегодня)</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(255,215,0,0.1);color:var(--gold)">💎</div>
-            <div class="kpi-change up">↑ 18.3%</div>
-          </div>
-          <div class="kpi-value">14,200</div>
-          <div class="kpi-label">WAU (неделя)</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-icon" style="background:rgba(139,92,246,0.1);color:var(--purple)">🌍</div>
-            <div class="kpi-change up">↑ 9.1%</div>
-          </div>
-          <div class="kpi-value">31,100</div>
-          <div class="kpi-label">MAU (месяц)</div>
-        </div>
-      </div>
-
-      <div class="charts-row">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Funnel конверсии</div>
-              <div class="chart-sub">Воронка удержания игроков</div>
-            </div>
-          </div>
-          <canvas id="funnelChart" height="200"></canvas>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Буст покупки</div>
-              <div class="chart-sub">Популярность бустов</div>
-            </div>
-          </div>
-          <canvas id="boostChart" height="200"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-header">
-          <div>
-            <div class="chart-title">Тапы по часам (сегодня)</div>
-            <div class="chart-sub">Активность по времени суток</div>
-          </div>
-        </div>
-        <canvas id="hourlyChart" height="100"></canvas>
-      </div>
-    </div>
-
-    <!-- ==================== REALTIME ==================== -->
-    <div class="page" id="page-realtime">
-      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(0,229,170,0.1);color:var(--green);width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">🟢</div>
-          <div class="kpi-value" id="rtOnline">247</div>
-          <div class="kpi-label">Онлайн сейчас</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(0,239,255,0.1);color:var(--cyan);width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">👆</div>
-          <div class="kpi-value" id="rtTPS">1,284</div>
-          <div class="kpi-label">Тапов/сек</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(255,215,0,0.1);color:var(--gold);width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">🪙</div>
-          <div class="kpi-value" id="rtCoins">42.1K</div>
-          <div class="kpi-label">Монет/мин</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(255,107,0,0.1);color:var(--orange);width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">🆕</div>
-          <div class="kpi-value" id="rtNew">12</div>
-          <div class="kpi-label">Новых/час</div>
-        </div>
-      </div>
-
-      <div class="chart-card" style="margin-bottom:16px">
-        <div class="chart-header">
-          <div class="chart-title">⚡ Реальное время — тапы</div>
-        </div>
-        <canvas id="realtimeChart" height="120"></canvas>
-      </div>
-
-      <div class="table-card">
-        <div class="table-header">
-          <div>
-            <div class="table-title">🟢 Активные сессии</div>
-            <div class="table-sub">Пользователи онлайн прямо сейчас</div>
-          </div>
-        </div>
-        <table class="data-table">
-          <thead><tr>
-            <th>Пользователь</th><th>Уровень</th><th>Тапов/сессию</th>
-            <th>Монет заработано</th><th>Время сессии</th>
-          </tr></thead>
-          <tbody id="activeSessionsTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ==================== USERS ==================== -->
-    <div class="page" id="page-users">
-      <div class="filter-row">
-        <div class="filter-chip active" onclick="filterUsers('all',this)">Все</div>
-        <div class="filter-chip" onclick="filterUsers('active',this)">Активные</div>
-        <div class="filter-chip" onclick="filterUsers('banned',this)">Заблокированные</div>
-        <div class="filter-chip" onclick="filterUsers('premium',this)">Премиум</div>
-        <div style="margin-left:auto">
-          <input class="search-input" placeholder="🔍 Поиск по имени или ID..." id="userSearch" oninput="searchUsers(this.value)">
-        </div>
-      </div>
-
-      <div class="table-card">
-        <div class="table-header">
-          <div>
-            <div class="table-title">Все пользователи</div>
-            <div class="table-sub" id="usersCount">48,291 пользователей</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-secondary btn-sm" onclick="exportData()">📤 CSV</button>
-          </div>
-        </div>
-        <table class="data-table">
-          <thead><tr>
-            <th>Пользователь</th><th>Уровень</th><th>Монеты</th>
-            <th>Тапы</th><th>Стрик</th><th>Статус</th><th>Действия</th>
-          </tr></thead>
-          <tbody id="usersTable"></tbody>
-        </table>
-        <div class="pagination">
-          <span>Показано 1–10 из 48,291</span>
-          <div class="page-btns">
-            <button class="page-btn">‹</button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn">...</button>
-            <button class="page-btn">›</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== LEADERBOARD ==================== -->
-    <div class="page" id="page-leaderboard">
-      <div class="table-card">
-        <div class="table-header">
-          <div>
-            <div class="table-title">🏆 Глобальный лидерборд</div>
-            <div class="table-sub">Топ игроков по всем монетам</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="toast('Лидерборд сброшен!','success')">🔄 Сбросить</button>
-        </div>
-        <table class="data-table">
-          <thead><tr>
-            <th>#</th><th>Игрок</th><th>Монеты</th><th>Тапы</th>
-            <th>Уровень</th><th>Стрик</th><th>Вступил</th>
-          </tr></thead>
-          <tbody id="lbTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ==================== REWARDS ==================== -->
-    <div class="page" id="page-rewards">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-
-        <div class="settings-card">
-          <div class="settings-title">🎁 Ежедневные награды</div>
-          <div id="dailyRewardsAdmin"></div>
-          <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="toast('Награды сохранены!','success')">💾 Сохранить</button>
-        </div>
-
-        <div class="settings-card">
-          <div class="settings-title">🎖️ Выдать награду вручную</div>
-          <div class="form-group">
-            <label class="form-label">User ID или @username</label>
-            <input class="form-input" placeholder="Введите ID пользователя" id="rewardUserId">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Тип награды</label>
-            <select class="form-select" id="rewardType">
-              <option>💰 Монеты</option>
-              <option>⚡ Энергия</option>
-              <option>🚀 Буст x2 (1 час)</option>
-              <option>👑 VIP статус</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Количество</label>
-            <input class="form-input" type="number" placeholder="1000" id="rewardAmount">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Причина (для логов)</label>
-            <input class="form-input" placeholder="Бонус за активность..." id="rewardReason">
-          </div>
-          <button class="btn btn-success" style="width:100%" onclick="giveReward()">🎁 Выдать</button>
-        </div>
-
-      </div>
-
-      <div class="table-card">
-        <div class="table-header">
-          <div class="table-title">История наград</div>
-        </div>
-        <table class="data-table">
-          <thead><tr><th>Игрок</th><th>Тип</th><th>Количество</th><th>Причина</th><th>Дата</th></tr></thead>
-          <tbody id="rewardHistoryTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ==================== BROADCAST ==================== -->
-    <div class="page" id="page-broadcast">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-        <div>
-          <div class="broadcast-card">
-            <div class="settings-title" style="margin-bottom:16px">📢 Новое сообщение</div>
-            <div class="form-group">
-              <label class="form-label">Получатели</label>
-              <select class="form-select" id="bcTarget">
-                <option>Все пользователи (48,291)</option>
-                <option>Активные за 7д (14,200)</option>
-                <option>Уровень 5+ (8,400)</option>
-                <option>Неактивные 7д+ (6,100)</option>
-                <option>Топ 100</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Текст сообщения</label>
-              <textarea class="form-textarea" id="bcText" placeholder="🎁 Привет, {username}! У нас новое событие..." oninput="updateBcPreview()"></textarea>
-              <div class="char-count"><span id="bcCharCount">0</span> / 500</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Кнопка (опционально)</label>
-              <input class="form-input" placeholder="🎮 Играть сейчас" id="bcBtn">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Запланировать</label>
-              <input class="form-input" type="datetime-local" id="bcSchedule">
-            </div>
-            <button class="btn btn-primary" style="width:100%" onclick="sendBroadcast()">📤 Отправить</button>
-          </div>
-        </div>
-
-        <div>
-          <div class="broadcast-card">
-            <div class="settings-title" style="margin-bottom:16px">👁️ Предпросмотр</div>
-            <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.05)">
-              <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-family:'Orbitron',monospace">TELEGRAM MESSAGE</div>
-              <div style="background:rgba(0,239,255,0.07);border-left:3px solid var(--cyan);padding:12px;border-radius:0 10px 10px 0">
-                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">🪙 CryptoTap</div>
-                <div class="preview-text" id="bcPreview" style="font-size:14px;color:var(--text)">Введи текст слева...</div>
-              </div>
-              <div id="bcBtnPreview" style="margin-top:10px;display:none">
-                <button style="background:rgba(0,239,255,0.15);border:1px solid rgba(0,239,255,0.3);color:var(--cyan);border-radius:10px;padding:9px 20px;font-size:13px;font-family:'Rajdhani',sans-serif;font-weight:700;width:100%;cursor:pointer">
-                  <span id="bcBtnText">Кнопка</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="broadcast-card" style="margin-top:0">
-            <div class="settings-title" style="margin-bottom:12px">📊 Статистика рассылок</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-              <div style="text-align:center;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border)">
-                <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--cyan)">24</div>
-                <div style="font-size:11px;color:var(--text2);margin-top:3px">Отправлено</div>
-              </div>
-              <div style="text-align:center;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border)">
-                <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--green)">68%</div>
-                <div style="font-size:11px;color:var(--text2);margin-top:3px">Open rate</div>
-              </div>
-              <div style="text-align:center;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border)">
-                <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--gold)">41%</div>
-                <div style="font-size:11px;color:var(--text2);margin-top:3px">CTR</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== GAME SETTINGS ==================== -->
-    <div class="page" id="page-game-settings">
-      <div class="settings-grid">
-
-        <div class="settings-card">
-          <div class="settings-title">🎮 Базовые настройки</div>
-          <div class="form-group">
-            <label class="form-label">Базовая сила тапа</label>
-            <input class="form-input" type="number" value="1" id="baseTap">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Базовая энергия</label>
-            <input class="form-input" type="number" value="500" id="baseEnergy">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Регенерация энергии (ед/сек)</label>
-            <input class="form-input" type="number" value="1" id="baseRegen">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Реф. бонус (монет)</label>
-            <input class="form-input" type="number" value="500" id="refBonus">
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="toast('Настройки сохранены!','success')">💾 Сохранить</button>
-        </div>
-
-        <div class="settings-card">
-          <div class="settings-title">✨ Игровые эффекты</div>
-          <div class="toggle-group">
-            <div>
-              <div class="toggle-label">Режим Frenzy</div>
-              <div class="toggle-desc">Активируется при быстрых тапах</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-group">
-            <div>
-              <div class="toggle-label">Крит. удары</div>
-              <div class="toggle-desc">x5 монет за удачный тап</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-group">
-            <div>
-              <div class="toggle-label">Авто-тап (офлайн)</div>
-              <div class="toggle-desc">Заработок пока пользователь офлайн</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-group">
-            <div>
-              <div class="toggle-label">Ежедневные награды</div>
-              <div class="toggle-desc">Система стриков и ежедневных входов</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-group">
-            <div>
-              <div class="toggle-label">Реферальная система</div>
-              <div class="toggle-desc">Бонусы за приглашённых друзей</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-group">
-            <div>
-              <div class="toggle-label">🚨 РЕЖИМ ОБСЛУЖИВАНИЯ</div>
-              <div class="toggle-desc">Закрыть игру для всех пользователей</div>
-            </div>
-            <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
-          </div>
-        </div>
-
-        <div class="settings-card">
-          <div class="settings-title">📅 Событийные настройки</div>
-          <div class="form-group">
-            <label class="form-label">Активное событие</label>
-            <select class="form-select">
-              <option>Без события</option>
-              <option>2x Монеты (выходные)</option>
-              <option>Марафон тапов</option>
-              <option>Пасхальное событие</option>
-              <option>Кастомное</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Множитель событие (x)</label>
-            <input class="form-input" type="number" value="1" step="0.5" min="1" max="10">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Дата начала</label>
-            <input class="form-input" type="datetime-local">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Дата окончания</label>
-            <input class="form-input" type="datetime-local">
-          </div>
-          <button class="btn btn-success" style="width:100%" onclick="toast('Событие активировано!','success')">🎉 Запустить событие</button>
-        </div>
-
-        <div class="settings-card">
-          <div class="settings-title">🤖 Бот настройки</div>
-          <div class="form-group">
-            <label class="form-label">Bot Token</label>
-            <input class="form-input" type="password" value="7182938471:AAABBB..." readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Webhook URL</label>
-            <input class="form-input" value="https://api.cryptotap.io/webhook">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Приветственное сообщение</label>
-            <textarea class="form-textarea" style="min-height:70px">🪙 Добро пожаловать в CryptoTap!\nТапай и зарабатывай монеты!</textarea>
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="toast('Настройки бота сохранены!','success')">💾 Сохранить</button>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== BOOSTS ADMIN ==================== -->
-    <div class="page" id="page-boosts-admin">
-      <div id="boostsAdminGrid" style="display:flex;flex-direction:column;gap:12px"></div>
-    </div>
-
-    <!-- ==================== MODERATION ==================== -->
-    <div class="page" id="page-moderation">
-      <div class="table-card">
-        <div class="table-header">
-          <div>
-            <div class="table-title">🛡️ Жалобы и нарушения</div>
-            <div class="table-sub">3 активных жалобы</div>
-          </div>
-        </div>
-        <table class="data-table">
-          <thead><tr><th>Нарушитель</th><th>Тип</th><th>Описание</th><th>Дата</th><th>Действия</th></tr></thead>
-          <tbody id="modTable"></tbody>
-        </table>
-      </div>
-
-      <div class="settings-card" style="margin-top:16px">
-        <div class="settings-title">⚠️ Анти-чит настройки</div>
-        <div class="toggle-group">
-          <div><div class="toggle-label">Детектор авто-тапов</div><div class="toggle-desc">Блокировать подозрительную частоту тапов</div></div>
-          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-        </div>
-        <div class="toggle-group">
-          <div><div class="toggle-label">Лимит тапов/сек</div><div class="toggle-desc">Максимум: 20 тапов/сек</div></div>
-          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-        </div>
-        <div class="toggle-group">
-          <div><div class="toggle-label">VPN блокировка</div><div class="toggle-desc">Ограничить доступ с VPN</div></div>
-          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="form-group" style="margin-top:8px">
-          <label class="form-label">Порог авто-бана (тапов/сек)</label>
-          <input class="form-input" type="number" value="20">
-        </div>
-        <button class="btn btn-primary" onclick="toast('Анти-чит настройки сохранены!','success')">💾 Сохранить</button>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /main -->
-
-</div><!-- /layout -->
-
-<!-- Modal: Add User -->
-<div class="modal-overlay" id="addUserModal">
-  <div class="modal">
-    <div class="modal-title">➕ Добавить пользователя</div>
-    <div class="modal-sub">Вручную создать аккаунт в системе</div>
-    <div class="form-group">
-      <label class="form-label">Telegram ID</label>
-      <input class="form-input" placeholder="123456789" id="newUserId">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Имя</label>
-      <input class="form-input" placeholder="Имя пользователя" id="newUserName">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Начальный баланс</label>
-      <input class="form-input" type="number" placeholder="0" id="newUserBalance">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('addUserModal')">Отмена</button>
-      <button class="btn btn-primary" onclick="addUser()">➕ Создать</button>
-    </div>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">CryptoTap Game · Только для администратора</div>
+    <input type="password" class="login-input" id="pwdInput" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Войти</button>
+    <div class="login-error" id="loginErr"></div>
   </div>
 </div>
 
-<!-- Toast container -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- MAIN -->
+<div class="layout" id="mainLayout" style="display:none">
+  <div class="sidebar">
+    <div class="sidebar-logo">💰 CryptoTap<span>Admin Panel v2.0</span></div>
+
+    <div class="nav-section">Аналитика</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">📊 Дашборд</div>
+    <div class="nav-item" onclick="showPage('realtime',this)">🔴 Реалтайм</div>
+
+    <div class="nav-section">Игроки</div>
+    <div class="nav-item" onclick="showPage('players',this)">👥 Все игроки</div>
+    <div class="nav-item" onclick="showPage('leaderboard',this)">🏆 Лидерборд</div>
+
+    <div class="nav-section">Управление</div>
+    <div class="nav-item" onclick="showPage('broadcast',this)">📢 Рассылка</div>
+    <div class="nav-item" onclick="showPage('settings',this)">⚙️ Настройки</div>
+    <div class="nav-item" onclick="showPage('setup',this)">🔧 Firebase DB</div>
+
+    <div class="sidebar-footer">
+      Панель администратора
+      <button class="logout-btn" onclick="doLogout()">🚪 Выйти</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">📊 Дашборд</div>
+      <div class="page-sub"><span class="live-dot"></span>Реальные данные из Firebase</div>
+      <div class="kpi-grid">
+        <div class="kpi-card gold"><div class="kpi-icon">👥</div><div class="kpi-label">Всего игроков</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub">Уникальных</div></div>
+        <div class="kpi-card cyan"><div class="kpi-icon">🕐</div><div class="kpi-label">Активны сегодня</div><div class="kpi-value" id="k-today">—</div><div class="kpi-sub">За 24 часа</div></div>
+        <div class="kpi-card green"><div class="kpi-icon">💰</div><div class="kpi-label">Монет заработано</div><div class="kpi-value" id="k-coins">—</div><div class="kpi-sub">Суммарно</div></div>
+        <div class="kpi-card purple"><div class="kpi-icon">👆</div><div class="kpi-label">Всего тапов</div><div class="kpi-value" id="k-taps">—</div><div class="kpi-sub">Суммарно</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="card-title">📈 Статистика</div><div id="d-stats"><div class="loading"><span class="spinner"></span>Загрузка...</div></div></div>
+        <div class="card"><div class="card-title">🏆 Топ-5 игроков</div><div id="d-top"><div class="loading"><span class="spinner"></span>Загрузка...</div></div></div>
+      </div>
+    </div>
+
+    <!-- REALTIME -->
+    <div class="page" id="page-realtime">
+      <div class="page-title">🔴 Реалтайм</div>
+      <div class="page-sub"><span class="live-dot"></span>Обновляется каждые 5 секунд</div>
+      <div class="kpi-grid">
+        <div class="kpi-card green"><div class="kpi-icon">🟢</div><div class="kpi-label">Онлайн сейчас</div><div class="kpi-value" id="rt-online">—</div><div class="kpi-sub">Активны последние 5 мин</div></div>
+        <div class="kpi-card gold"><div class="kpi-icon">⚡</div><div class="kpi-label">Активных за час</div><div class="kpi-value" id="rt-hour">—</div><div class="kpi-sub">За последний час</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">👁 Активные сессии</div>
+        <div id="rt-sessions"><div class="loading"><span class="spinner"></span>Загрузка...</div></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px" id="rt-updated"></div>
+      </div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div class="page" id="page-players">
+      <div class="page-title">👥 Игроки</div>
+      <div class="page-sub">Все пользователи игры</div>
+      <div class="toolbar">
+        <input type="text" class="ctrl-input" id="playerSearch" placeholder="🔍 Поиск по имени или ID..." oninput="renderPlayers()">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Все</button>
+        <button class="filter-btn" onclick="setFilter('active',this)">Активные</button>
+        <button class="filter-btn" onclick="setFilter('premium',this)">Premium</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>#</th><th>Игрок</th><th>Telegram ID</th><th>Монеты</th><th>Тапов</th><th>Уровень</th><th>Был онлайн</th><th>Статус</th></tr></thead>
+          <tbody id="t-players"><tr><td colspan="8" class="loading"><span class="spinner"></span>Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="page" id="page-leaderboard">
+      <div class="page-title">🏆 Лидерборд</div>
+      <div class="page-sub">Топ игроков по монетам</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Место</th><th>Игрок</th><th>Монет всего</th><th>Тапов</th><th>Уровень</th><th>Стрик</th></tr></thead>
+          <tbody id="t-leader"><tr><td colspan="6" class="loading"><span class="spinner"></span>Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BROADCAST -->
+    <div class="page" id="page-broadcast">
+      <div class="page-title">📢 Рассылка</div>
+      <div class="page-sub">Сообщения сохраняются в Firebase, бот подберёт их</div>
+      <div class="card">
+        <div class="card-title">✉️ Новое сообщение</div>
+        <textarea class="ctrl-input" id="broadcastMsg" placeholder="Текст сообщения для всех игроков..."></textarea>
+        <br><button class="action-btn" onclick="sendBroadcast()">📤 Добавить в очередь</button>
+        <span id="bc-status" style="font-size:13px;color:var(--text2);margin-left:12px"></span>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Охват</div>
+        <div class="stat-row"><span>Всего игроков</span><span class="stat-val" id="bc-total">—</span></div>
+        <div class="stat-row"><span>С Telegram ID</span><span class="stat-val" id="bc-tg">—</span></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-title">⚙️ Настройки</div>
+      <div class="page-sub">Управление паролем и параметрами игры</div>
+      <div class="card">
+        <div class="card-title">🔑 Смена пароля</div>
+        <input type="password" class="ctrl-input" id="pwd1" placeholder="Новый пароль (мин. 6 символов)" style="margin-bottom:8px;display:block;max-width:320px">
+        <input type="password" class="ctrl-input" id="pwd2" placeholder="Повторить" style="margin-bottom:12px;display:block;max-width:320px">
+        <button class="action-btn" onclick="changePwd()">💾 Сохранить</button>
+        <div id="pwd-status" style="font-size:13px;margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎮 Параметры игры</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Множитель монет (событие)</div>
+            <input type="number" class="ctrl-input" id="cfg-mult" value="1" min="1" max="10">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Стартовый баланс новых игроков</div>
+            <input type="number" class="ctrl-input" id="cfg-start" value="0" min="0">
+          </div>
+        </div>
+        <button class="action-btn" onclick="saveConfig()">💾 Сохранить в Firebase</button>
+        <div id="cfg-status" style="font-size:13px;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- FIREBASE SETUP -->
+    <div class="page" id="page-setup">
+      <div class="page-title">🔧 Подключение Firebase</div>
+      <div class="page-sub">Настрой базу данных — займёт 5 минут</div>
+
+      <div class="card">
+        <div class="card-title">📋 Инструкция</div>
+        <div style="font-size:13px;line-height:1.8;color:var(--text2)">
+          <b style="color:var(--text)">1.</b> Зайди на <b style="color:var(--cyan)">console.firebase.google.com</b><br>
+          <b style="color:var(--text)">2.</b> Создай проект (Add project) → без Google Analytics → Create<br>
+          <b style="color:var(--text)">3.</b> Слева: <b>Build → Realtime Database → Create Database</b><br>
+          <b style="color:var(--text)">4.</b> Выбери регион (europe-west1) → <b>Start in test mode</b> → Enable<br>
+          <b style="color:var(--text)">5.</b> Иконка шестерёнки → Project settings → вкладка <b>General</b><br>
+          <b style="color:var(--text)">6.</b> Прокрути вниз → Your apps → нажми <b>&lt;/&gt;</b> (Web) → Register<br>
+          <b style="color:var(--text)">7.</b> Скопируй весь <b>firebaseConfig</b> → вставь ниже
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔥 Firebase Config</div>
+        <textarea class="ctrl-input" id="fb-config-input" style="font-family:monospace;font-size:12px;min-height:160px" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "ваш-проект.firebaseapp.com",
+  "databaseURL": "https://ваш-проект-default-rtdb.firebaseio.com",
+  "projectId": "ваш-проект",
+  "storageBucket": "ваш-проект.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123:web:abc123"
+}'></textarea>
+        <button class="action-btn" onclick="saveFbConfig()">🔗 Сохранить и подключить</button>
+        <div id="fb-status" style="font-size:13px;margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 Статус подключения</div>
+        <div id="db-status" style="padding:12px;border-radius:8px;background:rgba(255,255,255,0.04);font-size:13px">Проверка...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📱 Что добавить в index.html</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Добавь этот код в <b>index.html</b> перед закрывающим &lt;/script&gt; — игра будет отправлять данные игроков в Firebase:</div>
+        <div class="setup-code" id="indexCodeSnippet">// Сначала подключи Firebase config выше</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
 
 <script>
-// =================== DATA ===================
-const USERS = [
-  {id:1001,name:'CryptoKing',balance:2850000,taps:481200,level:10,streak:45,status:'active',joined:'01.01.2025'},
-  {id:1002,name:'MoonShot',balance:1920000,taps:324000,level:9,streak:30,status:'active',joined:'05.01.2025'},
-  {id:1003,name:'TapMaster',balance:1450000,taps:290100,level:8,streak:22,status:'active',joined:'08.01.2025'},
-  {id:1004,name:'BlockChain99',balance:980000,taps:198000,level:7,streak:18,status:'active',joined:'10.01.2025'},
-  {id:1005,name:'SpamBot_888',balance:750000,taps:180000,level:6,streak:0,status:'banned',joined:'12.01.2025'},
-  {id:1006,name:'StarDust',balance:550000,taps:120000,level:6,streak:12,status:'active',joined:'14.01.2025'},
-  {id:1007,name:'HodlPro',balance:410000,taps:95000,level:5,streak:8,status:'active',joined:'15.01.2025'},
-  {id:1008,name:'LunarTap',balance:280000,taps:72000,level:4,streak:5,status:'active',joined:'18.01.2025'},
-  {id:1009,name:'GemMiner',balance:190000,taps:51000,level:4,streak:3,status:'active',joined:'20.01.2025'},
-  {id:1010,name:'NewUser2025',balance:12000,taps:4800,level:2,streak:2,status:'active',joined:'25.02.2025'},
-];
+// ════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════
+const DEFAULT_PWD = 'admin2024'; // ← смени после первого входа!
 
-const MOD_CASES = [
-  {user:'SpamBot_888',type:'🤖 Авто-тап',desc:'Подозрительная частота: 48 тапов/сек',date:'12.03.2025',severity:'high'},
-  {user:'FakeAcc_123',type:'🔄 Мультиакк',desc:'Несколько аккаунтов с одного IP',date:'11.03.2025',severity:'medium'},
-  {user:'CheatEngine',type:'💉 Инъекция',desc:'Попытка модификации баланса',date:'10.03.2025',severity:'high'},
-];
+function getPwd(){ return localStorage.getItem('ct_admin_pwd') || DEFAULT_PWD; }
 
-const REWARD_HISTORY = [
-  {user:'CryptoKing',type:'💰 Монеты',amount:'+10000',reason:'Победа в турнире',date:'12.03.2025'},
-  {user:'MoonShot',type:'🚀 Буст',amount:'x2 1ч',reason:'Топ недели',date:'11.03.2025'},
-  {user:'StarDust',type:'💎 VIP',amount:'7 дней',reason:'Реферал 50+',date:'10.03.2025'},
-];
-
-// =================== NAVIGATION ===================
-function goPage(name, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  el.classList.add('active');
-
-  const titles = {
-    'dashboard':'Дашборд','analytics':'Аналитика','realtime':'Онлайн-мониторинг',
-    'users':'Пользователи','leaderboard':'Лидерборд','rewards':'Управление наградами',
-    'broadcast':'Рассылка','game-settings':'Настройки игры','boosts-admin':'Управление бустами',
-    'moderation':'Модерация'
-  };
-  const descs = {
-    'dashboard':'Общий обзор платформы CryptoTap',
-    'analytics':'Детальная статистика и метрики',
-    'realtime':'Активность прямо сейчас',
-    'users':'Управление базой пользователей',
-    'leaderboard':'Глобальный рейтинг игроков',
-    'rewards':'Выдача наград и ежедневных бонусов',
-    'broadcast':'Рассылка уведомлений в Telegram',
-    'game-settings':'Конфигурация игровых параметров',
-    'boosts-admin':'Настройка бустов и апгрейдов',
-    'moderation':'Жалобы, баны и анти-чит'
-  };
-  document.getElementById('pageTitle').textContent = titles[name] || name;
-  document.getElementById('pageDesc').textContent = descs[name] || '';
-
-  if (name === 'users') renderUsers(USERS);
-  if (name === 'leaderboard') renderLeaderboard();
-  if (name === 'rewards') renderRewards();
-  if (name === 'boosts-admin') renderBoostsAdmin();
-  if (name === 'moderation') renderModeration();
-  if (name === 'analytics') initAnalyticsCharts();
-  if (name === 'realtime') renderActiveSessions();
-}
-
-// =================== USERS TABLE ===================
-let currentFilter = 'all';
-
-function renderUsers(data) {
-  const tbody = document.getElementById('usersTable');
-  const colors = ['#FFD700','#8B5CF6','#00FFFF','#FF6B00','#00E5AA','#FF4757','#FFA500','#00BFFF'];
-  tbody.innerHTML = data.map((u, i) => `
-    <tr>
-      <td>
-        <div class="user-cell">
-          <div class="user-mini-avatar" style="background:linear-gradient(135deg,${colors[i%8]}33,${colors[i%8]}55);color:${colors[i%8]};border:1px solid ${colors[i%8]}33">
-            ${u.name.charAt(0)}
-          </div>
-          <div>
-            <div class="user-mini-name">${u.name}</div>
-            <div class="user-mini-id">#${u.id}</div>
-          </div>
-        </div>
-      </td>
-      <td><span class="badge badge-blue">Ур. ${u.level}</span></td>
-      <td style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">${fmt(u.balance)}</td>
-      <td style="color:var(--text2)">${fmt(u.taps)}</td>
-      <td><span style="color:var(--orange);font-weight:700">🔥 ${u.streak}</span></td>
-      <td><span class="badge ${u.status==='active'?'badge-green':'badge-red'}">${u.status==='active'?'✅ Активен':'🚫 Бан'}</span></td>
-      <td>
-        <div class="actions-cell">
-          <button class="btn btn-secondary btn-sm" onclick="toast('Открыт профиль: ${u.name}','info')">👁️</button>
-          <button class="btn btn-secondary btn-sm" onclick="toast('+1000 монет выдано ${u.name}!','success')">🎁</button>
-          <button class="btn btn-danger btn-sm" onclick="banUser('${u.name}')">${u.status==='active'?'🚫':'✅'}</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function filterUsers(filter, el) {
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  currentFilter = filter;
-  let filtered = USERS;
-  if (filter === 'active') filtered = USERS.filter(u => u.status === 'active');
-  if (filter === 'banned') filtered = USERS.filter(u => u.status === 'banned');
-  renderUsers(filtered);
-}
-
-function searchUsers(q) {
-  const filtered = USERS.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || String(u.id).includes(q));
-  renderUsers(filtered);
-}
-
-function banUser(name) {
-  toast(name + ' статус изменён!', 'info');
-  setTimeout(() => renderUsers(USERS), 500);
-}
-
-function fmt(n) {
-  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
-  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
-  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
-  return Math.floor(n).toString();
-}
-
-// =================== LEADERBOARD ===================
-function renderLeaderboard() {
-  const tbody = document.getElementById('lbTable');
-  const medals = ['🥇','🥈','🥉'];
-  const colors = ['#FFD700','#C0C0C0','#CD7F32'];
-  tbody.innerHTML = USERS.sort((a,b) => b.balance - a.balance).map((u, i) => `
-    <tr>
-      <td style="font-family:'Orbitron',monospace;font-size:16px;color:${i < 3 ? colors[i] : 'var(--text2)'}">
-        ${i < 3 ? medals[i] : i+1}
-      </td>
-      <td>
-        <div class="user-cell">
-          <div class="user-mini-avatar" style="background:rgba(255,215,0,0.1);color:var(--gold)">
-            ${u.name.charAt(0)}
-          </div>
-          <div class="user-mini-name">${u.name}</div>
-        </div>
-      </td>
-      <td style="font-family:'Orbitron',monospace;color:var(--gold);font-size:13px">${fmt(u.balance)}</td>
-      <td style="color:var(--text2)">${fmt(u.taps)}</td>
-      <td><span class="badge badge-purple">Ур. ${u.level}</span></td>
-      <td><span style="color:var(--orange)">🔥 ${u.streak}</span></td>
-      <td style="color:var(--text2);font-size:13px">${u.joined}</td>
-    </tr>
-  `).join('');
-}
-
-// =================== REWARDS ===================
-const DAILY_R = [
-  {day:1,icon:'💰',reward:100},{day:2,icon:'💎',reward:200},{day:3,icon:'⚡',reward:300},
-  {day:4,icon:'🌟',reward:500},{day:5,icon:'🚀',reward:750},{day:6,icon:'👑',reward:1000},
-  {day:7,icon:'🏆',reward:2000},{day:8,icon:'🪙',reward:500}
-];
-
-function renderRewards() {
-  const container = document.getElementById('dailyRewardsAdmin');
-  container.innerHTML = DAILY_R.map(r => `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <span style="font-size:18px">${r.icon}</span>
-      <span style="color:var(--text2);font-size:13px;width:60px">День ${r.day}</span>
-      <input class="form-input" type="number" value="${r.reward}" style="flex:1" oninput="toast('День ${r.day} обновлён','info')">
-      <span style="font-size:12px;color:var(--text2)">монет</span>
-    </div>
-  `).join('');
-
-  const tbody = document.getElementById('rewardHistoryTable');
-  tbody.innerHTML = REWARD_HISTORY.map(r => `
-    <tr>
-      <td>${r.user}</td>
-      <td>${r.type}</td>
-      <td style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green)">${r.amount}</td>
-      <td style="color:var(--text2)">${r.reason}</td>
-      <td style="color:var(--text2)">${r.date}</td>
-    </tr>
-  `).join('');
-}
-
-function giveReward() {
-  const id = document.getElementById('rewardUserId').value;
-  const type = document.getElementById('rewardType').value;
-  const amount = document.getElementById('rewardAmount').value;
-  if (!id || !amount) { toast('Заполните все поля!','error'); return; }
-  toast('✅ Награда ' + type + ' (' + amount + ') выдана игроку #' + id, 'success');
-  document.getElementById('rewardUserId').value = '';
-  document.getElementById('rewardAmount').value = '';
-}
-
-// =================== BOOSTS ADMIN ===================
-const BOOSTS_CONFIG = [
-  {id:'tap_power',icon:'👆',name:'Сила тапа',maxLvl:5,levels:[{cost:200,val:2},{cost:500,val:4},{cost:1500,val:7},{cost:5000,val:12},{cost:15000,val:20}]},
-  {id:'energy_max',icon:'⚡',name:'Макс. энергия',maxLvl:5,levels:[{cost:300,val:750},{cost:800,val:1000},{cost:2000,val:1500},{cost:6000,val:2000},{cost:20000,val:3000}]},
-  {id:'energy_regen',icon:'🔋',name:'Регенерация',maxLvl:5,levels:[{cost:400,val:2},{cost:1000,val:4},{cost:3000,val:7},{cost:10000,val:12},{cost:30000,val:20}]},
-  {id:'auto_tap',icon:'🤖',name:'Авто-тап',maxLvl:5,levels:[{cost:1000,val:1},{cost:3000,val:3},{cost:8000,val:6},{cost:20000,val:12},{cost:50000,val:25}]},
-  {id:'crit',icon:'💥',name:'Критический удар',maxLvl:5,levels:[{cost:2000,val:5},{cost:6000,val:10},{cost:15000,val:15},{cost:40000,val:25},{cost:100000,val:40}]},
-];
-
-function renderBoostsAdmin() {
-  const grid = document.getElementById('boostsAdminGrid');
-  grid.innerHTML = BOOSTS_CONFIG.map(b => `
-    <div class="table-card">
-      <div class="table-header">
-        <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:24px">${b.icon}</span>
-          <div>
-            <div class="table-title">${b.name}</div>
-            <div class="table-sub">ID: ${b.id} • ${b.maxLvl} уровней</div>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="toast('${b.name} сохранён!','success')">💾 Сохранить</button>
-      </div>
-      <table class="data-table">
-        <thead><tr><th>Уровень</th><th>Стоимость (монет)</th><th>Значение</th><th>Покупок</th></tr></thead>
-        <tbody>
-          ${b.levels.map((l,i) => `
-            <tr>
-              <td><span class="badge badge-blue">ЛВЛ ${i+1}</span></td>
-              <td><input class="form-input" type="number" value="${l.cost}" style="width:120px"></td>
-              <td><input class="form-input" type="number" value="${l.val}" style="width:100px"></td>
-              <td style="color:var(--text2)">${Math.floor(Math.random()*500+100)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `).join('');
-}
-
-// =================== MODERATION ===================
-function renderModeration() {
-  const tbody = document.getElementById('modTable');
-  tbody.innerHTML = MOD_CASES.map(c => `
-    <tr>
-      <td>${c.user}</td>
-      <td><span class="badge ${c.severity==='high'?'badge-red':'badge-gold'}">${c.type}</span></td>
-      <td style="color:var(--text2);font-size:13px">${c.desc}</td>
-      <td style="color:var(--text2)">${c.date}</td>
-      <td>
-        <div class="actions-cell">
-          <button class="btn btn-danger btn-sm" onclick="toast('Пользователь заблокирован!','success')">🚫 Бан</button>
-          <button class="btn btn-secondary btn-sm" onclick="toast('Предупреждение выдано','info')">⚠️ Варн</button>
-          <button class="btn btn-success btn-sm" onclick="toast('Жалоба закрыта','success')">✅ ОК</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-// =================== BROADCAST ===================
-function updateBcPreview() {
-  const text = document.getElementById('bcText').value;
-  document.getElementById('bcPreview').textContent = text || 'Введи текст слева...';
-  document.getElementById('bcCharCount').textContent = text.length;
-  const btn = document.getElementById('bcBtn').value;
-  const btnPreview = document.getElementById('bcBtnPreview');
-  if (btn) { btnPreview.style.display='block'; document.getElementById('bcBtnText').textContent = btn; }
-  else { btnPreview.style.display='none'; }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const bcBtn = document.getElementById('bcBtn');
-  if (bcBtn) bcBtn.addEventListener('input', updateBcPreview);
-});
-
-function sendBroadcast() {
-  const text = document.getElementById('bcText').value;
-  if (!text) { toast('Введите текст сообщения!','error'); return; }
-  const target = document.getElementById('bcTarget').value;
-  toast('📤 Рассылка отправлена: ' + target, 'success');
-}
-
-// =================== MODAL ===================
-function showModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
-});
-
-function addUser() {
-  const id = document.getElementById('newUserId').value;
-  const name = document.getElementById('newUserName').value;
-  if (!id || !name) { toast('Заполните все поля!','error'); return; }
-  toast('✅ Пользователь ' + name + ' создан!', 'success');
-  closeModal('addUserModal');
-}
-
-// =================== TOAST ===================
-function toast(msg, type='info') {
-  const icons = {success:'✅',error:'❌',info:'ℹ️'};
-  const colors = {success:'var(--green)',error:'var(--red)',info:'var(--cyan)'};
-  const t = document.createElement('div');
-  t.className = 'toast ' + type;
-  t.innerHTML = `<span style="font-size:16px">${icons[type]}</span><span style="color:${colors[type]}">${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(t);
-  setTimeout(() => t.style.opacity='0', 2700);
-  setTimeout(() => t.remove(), 3000);
-}
-
-// =================== CHARTS ===================
-Chart.defaults.color = 'rgba(228,228,255,0.5)';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
-Chart.defaults.font.family = "'Rajdhani', sans-serif";
-
-const DAYS_7 = ['6м','5м','4м','3м','2м','Вчера','Сегодня'];
-
-function initMainChart() {
-  const ctx = document.getElementById('mainChart');
-  if (!ctx) return;
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: DAYS_7,
-      datasets: [
-        {
-          label: 'Тапы (тыс)',
-          data: [1200,1540,1380,1820,2100,2450,1870],
-          backgroundColor: 'rgba(0,239,255,0.25)',
-          borderColor: 'rgba(0,239,255,0.8)',
-          borderWidth: 2, borderRadius: 6, borderSkipped: false,
-          yAxisID: 'y',
-        },
-        {
-          label: 'Новые юзеры',
-          data: [480,620,540,710,850,920,782],
-          type: 'line',
-          borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.1)',
-          borderWidth: 2, tension: 0.4, pointRadius: 4,
-          pointBackgroundColor: '#FFD700',
-          fill: true, yAxisID: 'y1',
-        }
-      ]
-    },
-    options: {
-      responsive: true, interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { labels: { boxWidth: 12 } } },
-      scales: {
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v+'K' } },
-        y1: { position: 'right', grid: { display: false }, ticks: { callback: v => v } }
-      }
-    }
-  });
-}
-
-function initLevelsChart() {
-  const ctx = document.getElementById('levelsChart');
-  if (!ctx) return;
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Ур.1','Ур.2-3','Ур.4-5','Ур.6-7','Ур.8-9','Ур.10'],
-      datasets: [{
-        data: [12000, 18000, 9500, 5200, 2800, 791],
-        backgroundColor: ['rgba(255,71,87,0.7)','rgba(255,165,0,0.7)','rgba(255,215,0,0.7)',
-          'rgba(0,229,170,0.7)','rgba(0,239,255,0.7)','rgba(139,92,246,0.7)'],
-        borderColor: 'transparent', borderWidth: 0,
-        hoverOffset: 8,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8 } } },
-      cutout: '65%',
-    }
-  });
-}
-
-function initSparklines() {
-  const sparkData = [
-    { id:'spark1', data:[28,35,38,42,40,45,48], color:'rgba(0,239,255,0.8)' },
-    { id:'spark2', data:[1.8,2.0,2.1,2.2,2.1,2.3,2.4], color:'rgba(255,215,0,0.8)' },
-    { id:'spark3', data:[12,14,16,15,17,19,18.7], color:'rgba(0,229,170,0.8)' },
-    { id:'spark4', data:[74,73,72,73,71,72,71], color:'rgba(139,92,246,0.8)' },
-  ];
-  sparkData.forEach(s => {
-    const ctx = document.getElementById(s.id);
-    if (!ctx) return;
-    new Chart(ctx, {
-      type: 'line',
-      data: { labels: DAYS_7, datasets: [{ data: s.data, borderColor: s.color, borderWidth: 2, fill: true, backgroundColor: s.color.replace('0.8','0.08'), tension: 0.4, pointRadius: 0 }] },
-      options: { responsive: true, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
-    });
-  });
-}
-
-function initTopPlayers() {
-  const list = document.getElementById('topPlayersList');
-  const max = USERS[0].balance;
-  list.innerHTML = USERS.slice(0,6).map((u,i) => `
-    <div class="mini-rank-item">
-      <div class="mini-rank-num">${i+1}</div>
-      <div class="mini-rank-name">${u.name}</div>
-      <div class="mini-rank-bar-wrap">
-        <div class="progress-bar-wrap">
-          <div class="progress-bar" style="width:${(u.balance/max*100)}%;background:linear-gradient(90deg,var(--gold),var(--orange))"></div>
-        </div>
-      </div>
-      <div class="mini-rank-val">${fmt(u.balance)}</div>
-    </div>
-  `).join('');
-}
-
-function initActivity() {
-  const events = [
-    {color:'var(--green)',text:'<strong>CryptoKing</strong> достиг 10 уровня!',time:'2 мин назад'},
-    {color:'var(--gold)',text:'<strong>MoonShot</strong> купил буст Авто-тап ур.4',time:'5 мин назад'},
-    {color:'var(--cyan)',text:'<strong>4 новых</strong> игрока зарегистрировались',time:'8 мин назад'},
-    {color:'var(--orange)',text:'Рассылка отправлена <strong>48,291</strong> пользователям',time:'15 мин назад'},
-    {color:'var(--red)',text:'<strong>SpamBot_888</strong> заблокирован (авто-тап)',time:'23 мин назад'},
-    {color:'var(--purple)',text:'Событие <strong>2x монеты</strong> завершено',time:'1 час назад'},
-  ];
-  document.getElementById('activityFeed').innerHTML = events.map(e => `
-    <div class="activity-item">
-      <div class="activity-dot" style="background:${e.color};box-shadow:0 0 6px ${e.color}"></div>
-      <div>
-        <div class="activity-text">${e.text}</div>
-        <div class="activity-time">${e.time}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function initAnalyticsCharts() {
-  if (document.getElementById('funnelChart')._chartInited) return;
-
-  new Chart(document.getElementById('funnelChart'), {
-    type: 'bar',
-    data: {
-      labels: ['Запуск','Тап 1','День 3','Буст','День 7','Топ 100'],
-      datasets: [{
-        label: 'Пользователи',
-        data: [48291, 41600, 28000, 15400, 9800, 100],
-        backgroundColor: ['rgba(0,239,255,0.6)','rgba(0,229,170,0.6)','rgba(255,215,0,0.6)','rgba(255,165,0,0.6)','rgba(255,107,0,0.6)','rgba(139,92,246,0.6)'],
-        borderRadius: 6, borderWidth: 0,
-      }]
-    },
-    options: {
-      responsive: true, indexAxis: 'y',
-      plugins: { legend: { display: false } },
-      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: {} }
-    }
-  });
-  document.getElementById('funnelChart')._chartInited = true;
-
-  new Chart(document.getElementById('boostChart'), {
-    type: 'polarArea',
-    data: {
-      labels: ['Сила тапа','Макс. энергия','Регенерация','Авто-тап','Крит. удар'],
-      datasets: [{
-        data: [8400,6200,5100,3800,2100],
-        backgroundColor: ['rgba(255,215,0,0.5)','rgba(0,239,255,0.5)','rgba(0,229,170,0.5)','rgba(139,92,246,0.5)','rgba(255,107,0,0.5)'],
-        borderWidth: 0,
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6 } } } }
-  });
-
-  new Chart(document.getElementById('hourlyChart'), {
-    type: 'line',
-    data: {
-      labels: Array.from({length:24},(_,i)=>i+':00'),
-      datasets: [{
-        label: 'Тапов',
-        data: [200,120,80,60,80,200,450,820,1100,1400,1600,1550,1400,1300,1200,1100,1300,1600,1800,1900,1700,1400,900,500],
-        borderColor: 'var(--cyan)', backgroundColor: 'rgba(0,239,255,0.08)',
-        fill: true, tension: 0.4, pointRadius: 2,
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
-  });
-}
-
-function renderActiveSessions() {
-  const sessions = [
-    {name:'CryptoKing',level:10,taps:1240,coins:24800,time:'24:15'},
-    {name:'MoonShot',level:9,taps:890,coins:17800,time:'18:42'},
-    {name:'TapMaster',level:8,taps:650,coins:9100,time:'12:30'},
-    {name:'StarDust',level:6,taps:420,coins:4200,time:'7:18'},
-    {name:'HodlPro',level:5,taps:310,coins:2480,time:'5:02'},
-  ];
-  const tbody = document.getElementById('activeSessionsTable');
-  if (!tbody) return;
-  tbody.innerHTML = sessions.map(s => `
-    <tr>
-      <td>
-        <div class="user-cell">
-          <div class="user-mini-avatar" style="background:rgba(0,229,170,0.1);color:var(--green);border:1px solid rgba(0,229,170,0.2)">${s.name.charAt(0)}</div>
-          <div class="user-mini-name">${s.name}</div>
-        </div>
-      </td>
-      <td><span class="badge badge-blue">Ур. ${s.level}</span></td>
-      <td style="color:var(--cyan);font-family:'Orbitron',monospace;font-size:13px">${s.taps.toLocaleString()}</td>
-      <td style="color:var(--gold);font-family:'Orbitron',monospace;font-size:13px">${fmt(s.coins)}</td>
-      <td style="color:var(--green)">🟢 ${s.time}</td>
-    </tr>
-  `).join('');
-}
-
-// Realtime simulation
-function simulateRealtime() {
-  const online = 240 + Math.floor(Math.random() * 20);
-  const tps = 1200 + Math.floor(Math.random() * 200);
-  const coins = Math.floor((tps * 60 * 1.5) / 1000);
-  document.getElementById('rtOnline').textContent = online;
-  document.getElementById('rtTPS').textContent = tps.toLocaleString();
-  document.getElementById('rtCoins').textContent = coins + 'K';
-  document.getElementById('onlineCount').textContent = online + ' онлайн';
-  document.getElementById('onlineBadge').textContent = online;
-}
-
-let rtChartInstance = null;
-let rtData = Array(30).fill(0).map(() => 1200 + Math.floor(Math.random()*300));
-let rtLabels = Array(30).fill('');
-
-function initRealtimeChart() {
-  const ctx = document.getElementById('realtimeChart');
-  if (!ctx || rtChartInstance) return;
-  rtChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: rtLabels,
-      datasets: [{
-        label: 'Тапов/сек',
-        data: [...rtData],
-        borderColor: 'var(--green)',
-        backgroundColor: 'rgba(0,229,170,0.08)',
-        fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2,
-      }]
-    },
-    options: {
-      responsive: true, animation: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { display: false },
-        y: { min: 800, max: 2200, grid: { color: 'rgba(255,255,255,0.04)' } }
-      }
-    }
-  });
-}
-
-setInterval(() => {
-  simulateRealtime();
-  rtData.push(1200 + Math.floor(Math.random()*400));
-  if (rtData.length > 30) rtData.shift();
-  if (rtChartInstance) {
-    rtChartInstance.data.datasets[0].data = [...rtData];
-    rtChartInstance.update('none');
+function doLogin(){
+  const v = document.getElementById('pwdInput').value;
+  if(v === getPwd()){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainLayout').style.display='flex';
+    localStorage.setItem('ct_admin_sess', Date.now());
+    appInit();
+  } else {
+    const e=document.getElementById('loginErr');
+    e.textContent='❌ Неверный пароль';
+    document.getElementById('pwdInput').value='';
+    setTimeout(()=>e.textContent='',3000);
   }
-  if (document.getElementById('page-realtime').classList.contains('active')) {
-    initRealtimeChart();
+}
+function doLogout(){ localStorage.removeItem('ct_admin_sess'); location.reload(); }
+function changePwd(){
+  const p1=document.getElementById('pwd1').value, p2=document.getElementById('pwd2').value;
+  const s=document.getElementById('pwd-status');
+  if(!p1){s.textContent='❌ Введи пароль';return;}
+  if(p1!==p2){s.textContent='❌ Пароли не совпадают';return;}
+  if(p1.length<6){s.textContent='❌ Минимум 6 символов';return;}
+  localStorage.setItem('ct_admin_pwd',p1);
+  s.style.color='var(--green)'; s.textContent='✅ Пароль изменён!';
+  setTimeout(()=>{s.textContent='';s.style.color='';},3000);
+}
+
+// Авто-вход если сессия < 2 часов
+const sess=localStorage.getItem('ct_admin_sess');
+if(sess && Date.now()-sess < 7200000){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainLayout').style.display='flex';
+  appInit();
+} else {
+  document.getElementById('pwdInput').focus();
+}
+document.getElementById('pwdInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ════════════════════════════════════
+//  FIREBASE
+// ════════════════════════════════════
+let db=null, allPlayers=[], pFilter='all';
+
+function getFbConfig(){
+  try{ const c=localStorage.getItem('ct_fb_config'); return c?JSON.parse(c):null; }
+  catch(e){ return null; }
+}
+function saveFbConfig(){
+  const raw=document.getElementById('fb-config-input').value.trim();
+  const s=document.getElementById('fb-status');
+  try{
+    const cfg=JSON.parse(raw);
+    if(!cfg.databaseURL) throw new Error('Нет поля databaseURL');
+    localStorage.setItem('ct_fb_config',JSON.stringify(cfg));
+    s.style.color='var(--green)'; s.textContent='✅ Сохранено! Перезагружаю...';
+    setTimeout(()=>location.reload(),1500);
+  }catch(e){
+    s.style.color='var(--red)'; s.textContent='❌ '+e.message;
   }
-}, 1500);
+}
+function initFb(){
+  const cfg=getFbConfig();
+  const st=document.getElementById('db-status');
+  if(!cfg){
+    if(st) st.textContent='⚠️ Firebase не настроен — перейди в раздел "Firebase DB"';
+    return false;
+  }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(cfg);
+    db=firebase.database();
+    if(st){ st.style.color='var(--green)'; st.textContent='✅ Подключено: '+cfg.databaseURL; }
+    updateCodeSnippet(cfg);
+    return true;
+  }catch(e){
+    if(st){ st.style.color='var(--red)'; st.textContent='❌ '+e.message; }
+    return false;
+  }
+}
+function updateCodeSnippet(cfg){
+  const el=document.getElementById('indexCodeSnippet');
+  if(!el) return;
+  el.textContent=`// ═══ FIREBASE SYNC — вставь в index.html ═══
+const FB_CFG = ${JSON.stringify(cfg,null,2)};
 
-function exportData() {
-  toast('📤 Экспорт CSV запущен...', 'info');
-  setTimeout(() => toast('✅ Файл users_export.csv готов!', 'success'), 1500);
+// Добавь в <head>:
+// <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"><\/script>
+// <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"><\/script>
+
+let fbDb = null;
+try {
+  if(!firebase.apps.length) firebase.initializeApp(FB_CFG);
+  fbDb = firebase.database();
+} catch(e){}
+
+function syncToFirebase() {
+  if(!fbDb || !gs) return;
+  const tg = window.Telegram?.WebApp?.initDataUnsafe?.user || {};
+  const uid = tg.id || 'anon_' + Math.random().toString(36).slice(2);
+  fbDb.ref('players/' + uid).set({
+    tgId:         tg.id || null,
+    firstName:    tg.first_name || gs.playerName || 'Игрок',
+    username:     tg.username || null,
+    isPremium:    tg.is_premium || false,
+    balance:      Math.floor(gs.balance || 0),
+    allTimeEarned:Math.floor(gs.allTimeEarned || 0),
+    totalTaps:    gs.totalTaps || 0,
+    level:        gs.level || 1,
+    streak:       gs.streak || 0,
+    daysActive:   gs.daysActive || 1,
+    lastSeen:     Date.now(),
+    firstSeen:    gs.firstSeen || Date.now(),
+  });
 }
 
-function setChartTab(el, period) {
-  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+// Синк каждые 30 секунд и при сохранении
+setInterval(syncToFirebase, 30000);
+const _origSave = saveState;
+saveState = function(){ _origSave(); syncToFirebase(); };`;
+}
+
+// ════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════
+let rtInterval=null;
+function showPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(rtInterval){ clearInterval(rtInterval); rtInterval=null; }
+  if(name==='dashboard') loadDashboard();
+  if(name==='players')   loadPlayers();
+  if(name==='leaderboard') loadPlayers();
+  if(name==='realtime')  { loadRealtime(); rtInterval=setInterval(loadRealtime,5000); }
+  if(name==='broadcast') loadBroadcastStats();
+  if(name==='settings')  loadGameConfig();
+}
+
+// ════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════
+function fmt(n){
+  n=Math.floor(n||0);
+  if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+  if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toString();
+}
+function ago(ts){
+  if(!ts) return 'никогда';
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60) return s+'с назад';
+  if(s<3600) return Math.floor(s/60)+'м назад';
+  if(s<86400) return Math.floor(s/3600)+'ч назад';
+  return Math.floor(s/86400)+'д назад';
+}
+function noFb(id){
+  const el=document.getElementById(id);
+  if(el) el.innerHTML='<div class="no-firebase">⚠️ Firebase не подключён.<br>Перейди в <b>Firebase DB</b> и вставь конфиг.</div>';
+}
+
+// ════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════
+async function loadDashboard(){
+  if(!db){ noFb('d-stats'); noFb('d-top'); ['k-total','k-today','k-coins','k-taps'].forEach(i=>document.getElementById(i).textContent='—'); return; }
+  try{
+    const snap=await db.ref('players').once('value');
+    const data=snap.val()||{};
+    allPlayers=Object.entries(data).map(([id,p])=>({id,...p}));
+    const now=Date.now(), DAY=86400000;
+    const totalCoins=allPlayers.reduce((s,p)=>s+(p.allTimeEarned||0),0);
+    const totalTaps =allPlayers.reduce((s,p)=>s+(p.totalTaps||0),0);
+    const todayAct  =allPlayers.filter(p=>now-(p.lastSeen||0)<DAY).length;
+
+    document.getElementById('k-total').textContent=fmt(allPlayers.length);
+    document.getElementById('k-today').textContent=fmt(todayAct);
+    document.getElementById('k-coins').textContent=fmt(totalCoins);
+    document.getElementById('k-taps').textContent =fmt(totalTaps);
+
+    const avgLvl=allPlayers.reduce((s,p)=>s+(p.level||1),0)/(allPlayers.length||1);
+    document.getElementById('d-stats').innerHTML=`
+      <div class="stat-row"><span>Новых за 24ч</span><span class="stat-val">${allPlayers.filter(p=>now-(p.firstSeen||0)<DAY).length}</span></div>
+      <div class="stat-row"><span>Новых за 7 дней</span><span class="stat-val">${allPlayers.filter(p=>now-(p.firstSeen||0)<7*DAY).length}</span></div>
+      <div class="stat-row"><span>Средний уровень</span><span class="stat-val">${avgLvl.toFixed(1)}</span></div>
+      <div class="stat-row"><span>Premium игроков</span><span class="stat-val">${allPlayers.filter(p=>p.isPremium).length}</span></div>
+      <div class="stat-row"><span>Средний баланс</span><span class="stat-val">${fmt(totalCoins/(allPlayers.length||1))}</span></div>
+    `;
+    const top=[...allPlayers].sort((a,b)=>(b.allTimeEarned||0)-(a.allTimeEarned||0)).slice(0,5);
+    document.getElementById('d-top').innerHTML=top.length?top.map((p,i)=>`
+      <div class="stat-row">
+        <span>${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${p.firstName||'Игрок'}${p.username?` <span style="color:var(--text2);font-size:11px">@${p.username}</span>`:''}</span>
+        <span class="stat-val">${fmt(p.allTimeEarned)}</span>
+      </div>`).join(''):'<div style="color:var(--text2)">Нет данных</div>';
+  }catch(e){
+    document.getElementById('d-stats').innerHTML=`<div style="color:var(--red)">Ошибка: ${e.message}</div>`;
+  }
+}
+
+// ════════════════════════════════════
+//  PLAYERS
+// ════════════════════════════════════
+async function loadPlayers(){
+  if(!db){
+    noFb('t-players'); noFb('t-leader'); return;
+  }
+  try{
+    const snap=await db.ref('players').once('value');
+    allPlayers=Object.entries(snap.val()||{}).map(([id,p])=>({id,...p}));
+    renderPlayers(); renderLeaderboard();
+  }catch(e){
+    document.getElementById('t-players').innerHTML=`<tr><td colspan="8" style="color:var(--red)">Ошибка: ${e.message}</td></tr>`;
+  }
+}
+function renderPlayers(){
+  const q=(document.getElementById('playerSearch')?.value||'').toLowerCase();
+  const now=Date.now();
+  let list=[...allPlayers];
+  if(pFilter==='active')  list=list.filter(p=>now-(p.lastSeen||0)<86400000);
+  if(pFilter==='premium') list=list.filter(p=>p.isPremium);
+  if(q) list=list.filter(p=>(p.firstName||'').toLowerCase().includes(q)||(p.username||'').toLowerCase().includes(q)||String(p.tgId||p.id).includes(q));
+  list.sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));
+  if(!list.length){
+    document.getElementById('t-players').innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:20px">Нет игроков</td></tr>';
+    return;
+  }
+  document.getElementById('t-players').innerHTML=list.slice(0,100).map((p,i)=>{
+    const online=now-(p.lastSeen||0)<300000;
+    return `<tr>
+      <td style="color:var(--text2)">${i+1}</td>
+      <td><b>${p.firstName||'Неизвестный'}</b>${p.username?`<br><span style="color:var(--text2);font-size:11px">@${p.username}</span>`:''}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.tgId||p.id}</td>
+      <td><span class="badge badge-gold">${fmt(p.balance||0)}</span></td>
+      <td>${fmt(p.totalTaps||0)}</td>
+      <td><span class="badge badge-purple">Ур.${p.level||1}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${ago(p.lastSeen)}</td>
+      <td><span class="badge ${online?'badge-green':'badge-red'}">${online?'🟢 онлайн':'⚫ офлайн'}</span></td>
+    </tr>`;
+  }).join('');
+}
+function renderLeaderboard(){
+  const sorted=[...allPlayers].sort((a,b)=>(b.allTimeEarned||0)-(a.allTimeEarned||0));
+  document.getElementById('t-leader').innerHTML=sorted.slice(0,50).map((p,i)=>`
+    <tr>
+      <td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td>
+      <td><b>${p.firstName||'Игрок'}</b>${p.username?` <span style="color:var(--text2);font-size:11px">@${p.username}</span>`:''}</td>
+      <td><span class="badge badge-gold">${fmt(p.allTimeEarned||0)}</span></td>
+      <td>${fmt(p.totalTaps||0)}</td>
+      <td><span class="badge badge-purple">Ур.${p.level||1}</span></td>
+      <td>${p.streak||0} 🔥</td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text2)">Нет данных</td></tr>';
+}
+function setFilter(f,el){
+  pFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  toast('График переключён: ' + period, 'info');
+  renderPlayers();
 }
 
-// =================== INIT ===================
-initMainChart();
-initLevelsChart();
-initSparklines();
-initTopPlayers();
-initActivity();
-simulateRealtime();
-setInterval(simulateRealtime, 3000);
+// ════════════════════════════════════
+//  REALTIME
+// ════════════════════════════════════
+async function loadRealtime(){
+  if(!db){ noFb('rt-sessions'); return; }
+  try{
+    const snap=await db.ref('players').once('value');
+    const players=Object.values(snap.val()||{});
+    const now=Date.now();
+    const online=players.filter(p=>now-(p.lastSeen||0)<300000);
+    const hourly=players.filter(p=>now-(p.lastSeen||0)<3600000);
+    document.getElementById('rt-online').textContent=online.length;
+    document.getElementById('rt-hour').textContent=hourly.length;
+    document.getElementById('rt-updated').textContent='Обновлено: '+new Date().toLocaleTimeString();
+    document.getElementById('rt-sessions').innerHTML=online.length?`
+      <table>
+        <thead><tr><th>Игрок</th><th>Баланс</th><th>Уровень</th><th>Активен</th></tr></thead>
+        <tbody>${online.map(p=>`<tr>
+          <td><b>${p.firstName||'Игрок'}</b>${p.username?` <span style="color:var(--text2)">@${p.username}</span>`:''}</td>
+          <td><span class="badge badge-gold">${fmt(p.balance||0)}</span></td>
+          <td><span class="badge badge-purple">Ур.${p.level||1}</span></td>
+          <td style="color:var(--green);font-size:12px">${ago(p.lastSeen)}</td>
+        </tr>`).join('')}</tbody>
+      </table>`
+    :'<div style="text-align:center;padding:30px;color:var(--text2)">Нет активных игроков</div>';
+  }catch(e){}
+}
+
+// ════════════════════════════════════
+//  BROADCAST
+// ════════════════════════════════════
+async function loadBroadcastStats(){
+  if(!db) return;
+  const snap=await db.ref('players').once('value');
+  const pl=Object.values(snap.val()||{});
+  document.getElementById('bc-total').textContent=pl.length;
+  document.getElementById('bc-tg').textContent=pl.filter(p=>p.tgId).length;
+}
+function sendBroadcast(){
+  const msg=document.getElementById('broadcastMsg').value.trim();
+  const s=document.getElementById('bc-status');
+  if(!msg){s.textContent='❌ Введи текст';return;}
+  if(!db){s.style.color='var(--red)';s.textContent='❌ Firebase не подключён';return;}
+  db.ref('broadcast').push({text:msg,ts:Date.now(),sent:false});
+  s.style.color='var(--green)'; s.textContent='✅ Добавлено в очередь';
+  document.getElementById('broadcastMsg').value='';
+  setTimeout(()=>{s.textContent='';},3000);
+}
+
+// ════════════════════════════════════
+//  GAME CONFIG
+// ════════════════════════════════════
+async function loadGameConfig(){
+  if(!db) return;
+  try{
+    const snap=await db.ref('config').once('value');
+    const cfg=snap.val()||{};
+    if(cfg.multiplier) document.getElementById('cfg-mult').value=cfg.multiplier;
+    if(cfg.startCoins) document.getElementById('cfg-start').value=cfg.startCoins;
+  }catch(e){}
+}
+function saveConfig(){
+  if(!db){document.getElementById('cfg-status').textContent='❌ Firebase не подключён';return;}
+  db.ref('config').set({
+    multiplier:parseInt(document.getElementById('cfg-mult').value)||1,
+    startCoins:parseInt(document.getElementById('cfg-start').value)||0,
+    updatedAt:Date.now()
+  }).then(()=>{
+    const s=document.getElementById('cfg-status');
+    s.style.color='var(--green)'; s.textContent='✅ Сохранено!';
+    setTimeout(()=>{s.textContent='';s.style.color='';},3000);
+  });
+}
+
+// ════════════════════════════════════
+//  INIT
+// ════════════════════════════════════
+function appInit(){
+  const ok=initFb();
+  const cfg=getFbConfig();
+  if(cfg) document.getElementById('fb-config-input').value=JSON.stringify(cfg,null,2);
+  if(ok) loadDashboard();
+  else ['k-total','k-today','k-coins','k-taps'].forEach(i=>document.getElementById(i).textContent='—');
+}
 </script>
 </body>
 </html>
